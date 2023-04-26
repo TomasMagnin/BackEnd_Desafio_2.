@@ -13,7 +13,7 @@ class ProductManager{
         
         const {title, description, price, thumbnail, code, stock} = newProduct; // Desestructuramos las propiedaes del objeto newProduct, para asignarlas a variables separadas que le especificamos y luego asignara los valores correspondientes a las del objeto newProduct.
         const products = await this.getProducts()                              // usando el metodo get traemos la informacion de nuestro sistema de archivos.
-        const findCode = products.find(item => item.code == code);             // Buscamos si se repite el codigo.
+        const findCode = products.some(item => item.code == code);             // Buscamos si se repite el codigo.
 
         if(title && description && price && thumbnail && code && stock) {   
             let product = {
@@ -53,6 +53,27 @@ class ProductManager{
         return findById ? products[id-1] : console.log("Not found");
     };
 
+    async updateProduct(id, change){
+        const products =await this.getProducts();
+        const productIndex = products.findIndex((product) => {
+           return product.id === id});
+        if(productIndex === -1){
+            return console.log("Not Product");
+        }
+        const productFind = products[productIndex];
+        const productUpdate = {...productFind, ...change};
+        await fs.promises.writeFile(this.path, JSON.stringify(products));     
+    }
+
+
+    async deleteProduct(id){
+        const products = await this.getProducts();
+        if(!products.some(item => item.id === id)){
+            return " Producto no Encontrado";
+        }
+        const newProducts = products.filter((product) => product.id !== id);
+        await fs.promises.writeFile(this.path, JSON.stringify(newProducts, null, 2));
+    };
 }
 
 
@@ -104,9 +125,16 @@ function main(productManager) {                             // Creo una funcion 
     productManager.getProductById(2).then((response) =>
         console.log(response));
    
+        console.log("Ahora vamos a actualizar el precio de Producto  ID = 2 a $200");
+    productManager.updateProduct(2, "stock: 200").then((response) =>
+        console.log(response));
+
+        console.log("Ahora vamos a eliminar el producto 3");
+        productManager.deleteProduct(3).then((response) =>
+            console.log(response));
 
 
-    //console.log(poductManager.getProductById(3));
+   
 
 };
 
@@ -114,11 +142,5 @@ main(poductManager)     // Paso por parametro a la funcion main mi nueva instanc
 
 
 
-
-
-//poductManager.addProduct('Pantalon Rojo', 'Talle L', '1000', 'http.img1', 455, 10);
-//poductManager.addProduct('Pantalon Verde', 'Talle M', '2000', 'http.img1', 457, 20);
-//poductManager.addProduct('Pantalon Amarillo', 'Talle S', '3000', 'http.img3', 456, 30);
-//poductManager.getProducts();
 
 
