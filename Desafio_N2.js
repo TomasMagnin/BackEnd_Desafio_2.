@@ -165,12 +165,12 @@ function main(productManager) {                                 // Creo una func
             };
     
 /* ----------------------------------------------------------------------------------------------------------------- */
-// 1)
+// 1 Leer array de productos)
   /*console.log("Ahora vamos a traer los productos");
     productManager.getProducts().then((response) =>
     console.log(response)); */
 
-// 2)
+// 2 Agregar productos)
     /* console.log("Vamos Agregar el producto 1"); 
     productManager.addProduct(product1).then((response) =>
     console.log(response)); */
@@ -182,18 +182,18 @@ function main(productManager) {                                 // Creo una func
     /* console.log( "Vamos Agregar el producto 3"); 
     productManager.addProduct(product3).then((response) =>
     console.log(response)); */
-    
-// 3)    
+     
+// 3 Buscamos Productos por ID)    
     /* console.log("Ahora vamos a buscar Productos por ID = 2");
     productManager.getProductById(2).then((response) =>
     console.log(response)); */
    
-// 4)        
+// 4 Actulizamos contenido de productos enviando el ID y el campo actualizado)        
    /*  console.log("Ahora vamos a actualizar el precio de Producto  ID = 2 a $500");
     productManager.updateProduct(2, {price: 15000}).then((response) =>
     console.log(response)); */
    
-// 5)        
+// 5 Eliminamos el producto enviando el ID del producto)        
     /* console.log("Ahora vamos a eliminar el producto 3");
     productManager.deleteProduct(3).then((response) =>
     console.log(response)); */
