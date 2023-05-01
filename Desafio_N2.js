@@ -2,143 +2,204 @@ const fs = require("fs");
 
 class ProductManager{
 
+    path;
+
     constructor(path){
-        this.id = 1;        // Creamos un objeto con el ID.
         this.path = path;   // Creamos un objeto con la ruta que le pasamos.
     }
 
-    async addProduct(newProduct) {
-
-        //console.log(newProduct);
-        
-        const {title, description, price, thumbnail, code, stock} = newProduct; // Desestructuramos las propiedaes del objeto newProduct, para asignarlas a variables separadas que le especificamos y luego asignara los valores correspondientes a las del objeto newProduct.
-        const products = await this.getProducts()                              // usando el metodo get traemos la informacion de nuestro sistema de archivos.
-        const findCode = products.some(item => item.code == code);             // Buscamos si se repite el codigo.
-
-        if(title && description && price && thumbnail && code && stock) {   
-            let product = {
-                id: this.id ++,
-                title,
-                description,
-                price,
-                thumbnail,
-                code, 
-                stock
-            }
-                if(!findCode){
-                    products.push(product);
-                    return findCode ? console.log(" Error code exist! ") : await fs.promises.writeFile(this.path, JSON.stringify(product, null, 2)) && console.log(" Product Added");
+    async addProduct(newProduct) { 
+        try { 
+            const {title, description, price, thumbnail, code, stock} = newProduct;  // Desestructuramos las propiedaes del objeto newProduct, para asignarlas a variables separadas que le especificamos y luego asignara los valores correspondientes a las variables del objeto newProduct.
+            const products = await this.getProducts();                               // usando el metodo get traemos la informacion de nuestro sistema de archivos.
+            if(title && description && price && thumbnail && code && stock && this.validateCode(code)) {        // Verificamos que las varibles contengan sus valores respectivamente.
+                let product = {
+                    id: await this.getNewId(),
+                    title,
+                    description,
+                    price,
+                    thumbnail,
+                    code, 
+                    stock,
                 }
-           
-        } else {
-            console.log("Validar Campos");
-        }
-       
-        
+                products.push(product);
+                //console.log(product);
+                await this.saveProduct(this.path, products);
+                return `Product ID:${product.id} added !`; 
+            }else{
+                    return "Error, Validate fields";
+                }
+        } catch (error) {
+            
+        }    
     };
 
     async getProducts() {
-        let product = [];
-        if(fs.existsSync(this.path)){
-            const dataFile = await fs.promises.readFile(this.path, "utf-8");
-            product = JSON.parse(dataFile);
+        
+        try {
+            let product = [];
+            if(fs.existsSync(this.path)){
+                const dataFile = await fs.promises.readFile(this.path, "utf-8");
+                return product = JSON.parse(dataFile);
+            }else{
+                return product;    
+            }
+        } catch (error) {
+            console.log(`Error ${error}`);
         }
-        return product
     };
 
     async getProductById(id) { 
+        try {
+            const products = await this.getProducts();
+            const findById =  products.find(item =>item.id === id);
+            return findById ? products[id-1] : console.log("Not found");
+        } catch (error) {
+            console.log(`Error ${error}`);
+        }
         
-        let products = await this.getProducts();
-        const findById =  products.find(item =>item.id == id);
-        return findById ? products[id-1] : console.log("Not found");
     };
+   
 
     async updateProduct(id, change){
-        const products =await this.getProducts();
-        const productIndex = products.findIndex((product) => {
-           return product.id === id});
-        if(productIndex === -1){
-            return console.log("Not Product");
+        try {
+            const products =await this.getProducts();
+            const productIndex = products.findIndex((product) =>  product.id === id);
+            if(productIndex === -1){
+                return console.log("Not Product");
+            }
+            const productFind = products[productIndex];
+            const productUpdate = {...productFind, ...change};
+            products[productIndex] = {...productUpdate, id};
+            await this.saveProduct(this.path, products)
+        } catch (error) {
+            console.log(`Error ${error}`);
         }
-        const productFind = products[productIndex];
-        const productUpdate = {...productFind, ...change};
-        await fs.promises.writeFile(this.path, JSON.stringify(products));     
-    }
+             
+    };
 
 
     async deleteProduct(id){
-        const products = await this.getProducts();
-        if(!products.some(item => item.id === id)){
-            return " Producto no Encontrado";
+        try {
+            const products = await this.getProducts();
+            if(products.some(item => item.id === id)){
+                const newProducts = products.filter((product) => product.id !== id);
+                await this.saveProduct(this.path, newProducts);
+            } else {
+                return " Producto no Encontrado";
+            }
+        } catch (error) {   
+            console.log(`Error ${error}`);
         }
-        const newProducts = products.filter((product) => product.id !== id);
-        await fs.promises.writeFile(this.path, JSON.stringify(newProducts, null, 2));
     };
-}
 
 
-
-
-
-let poductManager = new ProductManager("./products.json")   // Creo una nueva instancia u objeto de la clase ProductManager.
-
-
-function main(productManager) {                             // Creo una funcion main, para poder ejecutar los metodos de la clase y ademas crear la variable con los datos a registrar.
-    const products = [
-        {   title: 'Pantalon Rojo', 
-            description: 'Talle L', 
-            price: '1000', 
-            thumbnail: 'http.img1',
-            code: 455, 
-            stock: 10,
-        },
-        {   title: 'Pantalon Verde', 
-            description: 'Talle M', 
-            price: '2000', 
-            thumbnail: 'http.img2',
-            code: 456, 
-            stock: 20,
-        },
-        {   title: 'Pantalon Amarillo', 
-            description: 'Talle S', 
-            price: '3000', 
-            thumbnail: 'http.img3',
-            code: 456, 
-            stock: 30,
+    async saveProduct(path, dataProduct){
+        try {
+            let productsStrFy = JSON.stringify(dataProduct, null, 2);
+            await fs.promises.writeFile(path, productsStrFy);
         }
-    ];
+        catch (error) {
+            console.log(`Error ${error}`);
+       } 
+    };
 
 
+    async validateCode(code) {
+        try{
+            const products = await this.getProducts();
+            const result = products.find(item => item.code === code)
+           return result ? false : true;    
+        }
+        catch(error){
+            console.log(`Error ${error}`);
+        }
+    };
 
-     console.log("Ahora vamos a traer los productos");
-    productManager.getProducts().then((response) =>
-    console.log(response));
-
-
-    console.log( "Vamos Agregar un los Productos");
-    products.forEach(item => {
-        productManager.addProduct(item).then((response) =>
-        console.log(response));
-    })
-    
-    console.log("Ahora vamos a buscar Productos por ID = 2");
-    productManager.getProductById(2).then((response) =>
-        console.log(response));
-   
-        console.log("Ahora vamos a actualizar el precio de Producto  ID = 2 a $200");
-    productManager.updateProduct(2, "stock: 200").then((response) =>
-        console.log(response));
-
-        console.log("Ahora vamos a eliminar el producto 3");
-        productManager.deleteProduct(3).then((response) =>
-            console.log(response));
-
-
-   
+    async getNewId(){
+        try {
+            let idMax = 0;
+            const products = await this.getProducts();
+            products.forEach(item => {
+                if(item.id > idMax){
+                    idMax = item.id;
+                }
+             });
+             return idMax + 1;
+        } catch (error) {
+            console.log(`Error ${error}`);
+        }
+    };
 
 };
 
-main(poductManager)     // Paso por parametro a la funcion main mi nueva instancia de la clase.
+
+const productManager = new ProductManager("./products.json")    // Creo una nueva instancia u objeto de la clase ProductManager.
+function main(productManager) {                                 // Creo una funcion main, para poder ejecutar los metodos de la clase y ademas crear la variable con los datos a registrar.
+
+        const product1 = { 
+                title: 'Pantalon Rojo', 
+                description: 'Talle L', 
+                price: '1000', 
+                thumbnail: 'http.img1',
+                code: 45, 
+                stock: 10 
+            };
+
+        const product2 = {
+                title: 'Pantalon Verde', 
+                description: 'Talle M', 
+                price: '2000', 
+                thumbnail: 'http.img2',
+                code: 456, 
+                stock: 20,
+            };
+
+        const product3 = { 
+                title: 'Pantalon Amarillo', 
+                description: 'Talle S', 
+                price: '3000', 
+                thumbnail: 'http.img3',
+                code: 456, 
+                stock: 30,
+            };
+    
+/* ----------------------------------------------------------------------------------------------------------------- */
+// 1)
+  /*console.log("Ahora vamos a traer los productos");
+    productManager.getProducts().then((response) =>
+    console.log(response)); */
+
+// 2)
+    /* console.log("Vamos Agregar el producto 1"); 
+    productManager.addProduct(product1).then((response) =>
+    console.log(response)); */
+
+    /* console.log( "Vamos Agregar el producto 2"); 
+    productManager.addProduct(product2).then((response) =>
+    console.log(response)); */
+
+    /* console.log( "Vamos Agregar el producto 3"); 
+    productManager.addProduct(product3).then((response) =>
+    console.log(response)); */
+    
+// 3)    
+    /* console.log("Ahora vamos a buscar Productos por ID = 2");
+    productManager.getProductById(2).then((response) =>
+    console.log(response)); */
+   
+// 4)        
+   /*  console.log("Ahora vamos a actualizar el precio de Producto  ID = 2 a $500");
+    productManager.updateProduct(2, {price: 15000}).then((response) =>
+    console.log(response)); */
+   
+// 5)        
+    /* console.log("Ahora vamos a eliminar el producto 3");
+    productManager.deleteProduct(3).then((response) =>
+    console.log(response)); */
+};
+
+main(productManager);     // Paso por parametro a la funcion main mi nueva instancia de la clase.
 
 
 
